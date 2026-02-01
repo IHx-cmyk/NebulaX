@@ -1,0 +1,220 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+# --- WARNA INSTALLER ---
+PURPLE='\033[1;35m'
+CYAN='\033[1;36m'
+GREEN='\033[1;32m'
+NC='\033[0m'
+
+clear
+echo -e "${PURPLE}"
+echo "========================================"
+echo " N E B U L A - X | STELLAR EDITION v3 "
+echo "========================================"
+echo -e "${NC}"
+
+# 1. Update & Install Dependencies
+echo -e "${CYAN}[*] Menyiapkan environment...${NC}"
+pkg update -y && pkg upgrade -y
+# Tambahkan 'bc' untuk kalkulasi uptime jika perlu, dan 'grep'
+pkg install zsh git curl wget tar unzip unrar grep bc -y
+
+# 2. Setup Folder
+INSTALL_DIR="$HOME/.nebulaX"
+if [ -d "$INSTALL_DIR" ]; then
+    rm -rf "$INSTALL_DIR"
+    echo -e "${PURPLE}[*] Versi lama terdeteksi, menimpa instalasi...${NC}"
+fi
+mkdir -p "$INSTALL_DIR/plugins"
+
+# 3. Download Plugin (The Big 4)
+echo -e "${CYAN}[*] Mendownload Plugin ZSH...${NC}"
+git clone https://github.com/zsh-users/zsh-autosuggestions "$INSTALL_DIR/plugins/zsh-autosuggestions" --depth 1
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$INSTALL_DIR/plugins/zsh-syntax-highlighting" --depth 1
+git clone https://github.com/zsh-users/zsh-completions "$INSTALL_DIR/plugins/zsh-completions" --depth 1
+git clone https://github.com/zsh-users/zsh-history-substring-search "$INSTALL_DIR/plugins/zsh-history-substring-search" --depth 1
+
+# 4. Membuat Banner Canggih (Auto-Detect OS)
+echo -e "${CYAN}[*] Meracik 'NebulaFetch' System...${NC}"
+cat > "$INSTALL_DIR/banner.sh" <<'EOF'
+#!/bin/bash
+
+# --- PALET WARNA NEBULAX ---
+P1='\e[38;5;93m'   # Deep Purple
+P2='\e[38;5;129m'  # Vivid Purple
+P3='\e[38;5;141m'  # Light Purple
+P4='\e[38;5;213m'  # Pink
+WT='\e[38;5;255m'  # White
+LB='\e[1;34m'      # Light Blue (Accents)
+RS='\e[0m'         # Reset
+
+# --- DETEKSI SISTEM ---
+USER=$(whoami)
+HOST=$(hostname)
+KERNEL=$(uname -r | cut -d'-' -f1)
+SHELL_NAME=$(basename "$SHELL")
+
+# Deteksi OS
+if grep -q "Termux" /data/data/com.termux/files/usr/bin/login 2>/dev/null; then
+    OS_NAME="Android (Termux)"
+    TYPE="android"
+elif [ -f /etc/os-release ]; then
+    # Baca dari os-release (buat yang pake Proot/Linux asli)
+    . /etc/os-release
+    OS_NAME=$NAME
+    case $ID in
+        ubuntu) TYPE="ubuntu" ;;
+        debian) TYPE="debian" ;;
+        kali)   TYPE="kali" ;;
+        arch)   TYPE="arch" ;;
+        *)      TYPE="linux" ;;
+    esac
+else
+    OS_NAME=$(uname -o)
+    TYPE="android"
+fi
+
+# Hitung Uptime (Simple version for Termux)
+UPTIME=$(uptime | awk -F'( |,|:)+' '{if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0"d "h+0"h "m+0"m"}')
+
+# --- GAMBAR ASCII ART BERDASARKAN OS ---
+# Kita simpan ASCII art dalam variabel function
+
+get_android_art() {
+echo -e "${P1}      ▄▄▄▄▄▄▄      "
+echo -e "${P1}   ▄▀${P2}█████████${P1}▀▄   "
+echo -e "${P1}  ▄${P2}█${WT} █ ${P2}█████${WT} █ ${P2}█${P1}▄  "
+echo -e "${P1} ▄${P2}█████████████${P1}▄ "
+echo -e "${P1} █${P2}██▀▀▀▀▀▀▀▀▀██${P1}█ "
+echo -e "${P1} ▀             ▀ "
+}
+
+get_linux_art() {
+echo -e "${P1}        .---.      "
+echo -e "${P1}       /     \     "
+echo -e "${P1}      |${P2} O _ O ${P1}|    "
+echo -e "${P1}      /  \_/  \    "
+echo -e "${P1}    .' /     \ '.  "
+echo -e "${P1}   / _|       |_ \ "
+}
+
+# Pilih Logo
+if [[ "$TYPE" == "android" ]]; then
+    LOGO=$(get_android_art)
+else
+    LOGO=$(get_linux_art)
+fi
+
+# --- TAMPILKAN BANNER (Side by Side) ---
+# Menggunakan paste dan process substitution agar rapi
+
+clear
+echo ""
+paste <(echo "$LOGO") <(
+    echo -e "${P2}User   ${WT}: ${P4}$USER${P2}@${P4}$HOST"
+    echo -e "${P2}OS     ${WT}: ${P3}$OS_NAME"
+    echo -e "${P2}Kernel ${WT}: ${P3}$KERNEL"
+    echo -e "${P2}Uptime ${WT}: ${P3}$UPTIME"
+    echo -e "${P2}Shell  ${WT}: ${P3}$SHELL_NAME"
+    echo -e "${P2}Theme  ${WT}: ${P1}Nebula${WT}X"
+) | while read -r line; do
+    echo -e "$line"
+done
+echo ""
+echo -e "${P1}  Hecho en NebulaX  ${RS}"
+echo ""
+EOF
+
+chmod +x "$INSTALL_DIR/banner.sh"
+
+# 5. Membuat Konfigurasi Tema (Prompt)
+# Prompt tetap sama karena sudah cantik
+cat > "$INSTALL_DIR/nebulaX.zsh-theme" <<EOF
+P_DARK='%F{093}'
+P_MID='%F{129}'
+P_LIGHT='%F{213}'
+P_CYAN='%F{051}'
+P_WHITE='%F{255}'
+RESET='%f'
+
+setopt prompt_subst
+function git_stat() {
+  ref=\$(git symbolic-ref HEAD 2> /dev/null) || return
+  echo "\${P_LIGHT}(\${ref#refs/heads/})\${RESET}"
+}
+
+PROMPT="\${P_DARK}╭─\${P_MID}[\${P_CYAN}%~\${P_MID}] \$(git_stat)
+\${P_DARK}╰─\${P_LIGHT}👾 \${RESET}"
+RPROMPT="\${P_DARK}%t\${RESET}"
+EOF
+
+# 6. Membuat .zshrc SUPER
+if [ -f "$HOME/.zshrc" ]; then
+    cp "$HOME/.zshrc" "$HOME/.zshrc.backup_nebulaX"
+fi
+
+cat > "$HOME/.zshrc" <<EOF
+# --- NEBULA-X CONFIGURATION ---
+
+# 1. Tampilkan Banner Fetch
+bash $INSTALL_DIR/banner.sh
+
+# 2. History Setting
+HISTFILE=\$HOME/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+
+# 3. Load Tema & Plugin
+source $INSTALL_DIR/nebulaX.zsh-theme
+fpath=($INSTALL_DIR/plugins/zsh-completions/src \$fpath)
+source $INSTALL_DIR/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source $INSTALL_DIR/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source $INSTALL_DIR/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+
+# 4. Completion Menu
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors "\${(s.:.)LS_COLORS}"
+
+# 5. Keybindings
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+
+# 6. Alias
+alias c='clear'
+alias q='exit'
+alias install='pkg install'
+alias update='pkg update && pkg upgrade'
+alias fetch='bash $INSTALL_DIR/banner.sh' # Ketik 'fetch' buat liat banner lagi
+
+# 7. Helper Functions
+x() {
+    if [ -f \$1 ] ; then
+        case \$1 in
+            *.tar.bz2)   tar xjf \$1     ;;
+            *.tar.gz)    tar xzf \$1     ;;
+            *.bz2)       bunzip2 \$1     ;;
+            *.rar)       unrar e \$1     ;;
+            *.gz)        gunzip \$1      ;;
+            *.tar)       tar xf \$1      ;;
+            *.zip)       unzip \$1       ;;
+            *)           echo "'\$1' error" ;;
+        esac
+    else
+        echo "'\$1' invalid"
+    fi
+}
+mkcd() { mkdir -p "\$1" && cd "\$1"; }
+EOF
+
+# 7. Ganti Shell
+chsh -s zsh
+
+echo -e "${GREEN}"
+echo "========================================"
+echo "    NEBULA-X STELLAR TERINSTALL!        "
+echo "    Ketik 'zsh' untuk melihat hasilnya. "
+echo "========================================"
+echo -e "${NC}"
