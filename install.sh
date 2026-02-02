@@ -1,281 +1,286 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# --- WARNA PALET UNGU NEBULA ---
-C_BORDER='\033[38;5;93m'   # Ungu Gelap (Border)
-C_TITLE='\033[38;5;129m'   # Ungu Judul
-C_LABEL='\033[38;5;141m'   # Ungu Label Info
-C_VALUE='\033[38;5;255m'   # Putih (Isi Info)
-C_BAR_ON='\033[38;5;213m'  # Pink/Ungu (Bar Penuh)
-C_BAR_OFF='\033[38;5;236m' # Abu Gelap (Bar Kosong)
+# =============================================================================
+#   nebulaX - Ultimate Terminal Experience (Termux / Linux / macOS / WSL)
+#   Inspired by style like Stellar, but full-width cosmic nebula theme
+# =============================================================================
+
+# ─── Warna Palet Nebula (256 colors) ────────────────────────────────────────
+C_BORDER='\033[38;5;93m'     # Ungu gelap border
+C_TITLE='\033[38;5;129m'     # Ungu mid judul
+C_ACCENT='\033[38;5;165m'    # Magenta accent
+C_HL='\033[38;5;213m'        # Pink cerah (highlight & bar)
+C_LABEL='\033[38;5;147m'     # Ungu muda label
+C_VALUE='\033[38;5;231m'     # Putih cerah value
+C_BAR_ON='\033[38;5;213m'    # Pink bar penuh
+C_BAR_OFF='\033[38;5;237m'   # Abu sangat gelap bar kosong
 NC='\033[0m'
 
 clear
 echo -e "${C_TITLE}"
-echo "========================================"
-echo "   NEBULAX | ULTIMATE "
-echo "========================================"
+printf '═%.0s' $(seq 1 $(tput cols 2>/dev/null || echo 80))
+echo -e "              nebulaX  •  ULTIMATE TERMINAL SUITE${NC}"
+printf '─%.0s' $(seq 1 $(tput cols 2>/dev/null || echo 80))
 echo -e "${NC}"
 
-# --- BAGIAN 1: NEUTRALIZE RIVALS ---
-echo -e "${C_LABEL}[*] Mengamankan Shell Lain...${NC}"
-if [ -d "$HOME/.config/fish" ]; then
-    mv "$HOME/.config/fish" "$HOME/.config/fish.old.nebula"
-fi
-if [ -d "$HOME/.oh-my-zsh" ]; then
-    mv "$HOME/.oh-my-zsh" "$HOME/.oh-my-zsh.old.nebula"
-fi
-if [ -f "$HOME/.zshrc" ]; then
-    mv "$HOME/.zshrc" "$HOME/.zshrc.backup_pre_nebulax"
-fi
+# ─── 1. Neutralisasi pesaing (backup dulu) ──────────────────────────────────
+echo -e "\( {C_LABEL}→ Mengamankan konfigurasi shell lain... \){NC}"
+[ -d "$HOME/.config/fish" ]     && mv "$HOME/.config/fish"     "$HOME/.config/fish.bak.nebulaX"     2>/dev/null
+[ -d "$HOME/.oh-my-zsh" ]       && mv "$HOME/.oh-my-zsh"       "$HOME/.oh-my-zsh.bak.nebulaX"       2>/dev/null
+[ -f "$HOME/.zshrc" ]           && mv "$HOME/.zshrc"           "$HOME/.zshrc.bak.pre-nebulaX"       2>/dev/null
+[ -f "$HOME/.zprofile" ]        && mv "$HOME/.zprofile"        "$HOME/.zprofile.bak.pre-nebulaX"    2>/dev/null
 
-# --- BAGIAN 2: INSTALL DEPENDENCIES ---
-echo -e "${C_LABEL}[*] Menginstall Core System...${NC}"
-if [ -f /data/data/com.termux/files/usr/bin/bash ]; then
-    PKG_MAN="pkg install -y"
-elif [ -f /etc/debian_version ]; then
-    PKG_MAN="sudo apt install -y"
+# ─── 2. Deteksi OS & Package Manager ────────────────────────────────────────
+echo -e "\( {C_LABEL}→ Mendeteksi sistem & menyiapkan package manager... \){NC}"
+
+if [[ -f /data/data/com.termux/files/usr/bin/bash ]]; then
+    OS_TYPE="termux"
+    PKG_INSTALL="pkg install -y"
+    PKG_UPDATE="pkg update -y && pkg upgrade -y"
+elif [[ -f /etc/debian_version ]] || grep -qi "ubuntu" /etc/os-release 2>/dev/null; then
+    OS_TYPE="debian"
+    PKG_INSTALL="sudo apt update -y && sudo apt install -y"
+elif [[ -f /etc/fedora-release ]]; then
+    OS_TYPE="fedora"
+    PKG_INSTALL="sudo dnf install -y"
+elif [[ "$(uname)" == "Darwin" ]]; then
+    OS_TYPE="macos"
+    if command -v brew >/dev/null; then
+        PKG_INSTALL="brew install"
+    else
+        echo -e "${C_LABEL}Homebrew tidak ditemukan. Install dulu: /bin/bash -c \"\\( (curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\" \){NC}"
+        exit 1
+    fi
 else
-    PKG_MAN="pkg install -y"
+    echo -e "\( {C_LABEL}Sistem tidak didukung secara penuh. Menggunakan fallback Termux style. \){NC}"
+    PKG_INSTALL="sudo apt install -y || sudo dnf install -y || pkg install -y"
 fi
 
-$PKG_MAN zsh git curl wget tar unzip unrar grep bc net-tools
+# ─── 3. Install dependensi inti ─────────────────────────────────────────────
+echo -e "\( {C_LABEL}→ Menginstall paket yang dibutuhkan... \){NC}"
+$PKG_INSTALL zsh git curl wget tar unzip bc coreutils net-tools procps-ng 2>/dev/null || true
 
-# --- BAGIAN 3: SETUP DIR ---
+# macOS biasanya sudah punya sebagian besar, jadi aman dilewati jika gagal
+
+# ─── 4. Direktori nebulaX ───────────────────────────────────────────────────
 INSTALL_DIR="$HOME/.nebulaX"
-rm -rf "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR/plugins"
-mkdir -p "$INSTALL_DIR/bin"
+rm -rf "$INSTALL_DIR" 2>/dev/null
+mkdir -p "$INSTALL_DIR"/{plugins,bin,tmp}
 
-# --- BAGIAN 4: PLUGINS ---
-echo -e "${C_LABEL}[*] Download Plugins...${NC}"
-git clone https://github.com/zsh-users/zsh-autosuggestions "$INSTALL_DIR/plugins/zsh-autosuggestions" --depth 1
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$INSTALL_DIR/plugins/zsh-syntax-highlighting" --depth 1
-git clone https://github.com/zsh-users/zsh-completions "$INSTALL_DIR/plugins/zsh-completions" --depth 1
-git clone https://github.com/zsh-users/zsh-history-substring-search "$INSTALL_DIR/plugins/zsh-history-substring-search" --depth 1
+# ─── 5. Plugins Zsh populer & berguna ──────────────────────────────────────
+echo -e "\( {C_LABEL}→ Mengunduh plugins Zsh... \){NC}"
+git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions         "$INSTALL_DIR/plugins/zsh-autosuggestions"         2>/dev/null
+git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting     "$INSTALL_DIR/plugins/zsh-syntax-highlighting"     2>/dev/null
+git clone --depth 1 https://github.com/zsh-users/zsh-completions             "$INSTALL_DIR/plugins/zsh-completions"             2>/dev/null
+git clone --depth 1 https://github.com/zsh-users/zsh-history-substring-search "$INSTALL_DIR/plugins/zsh-history-substring-search" 2>/dev/null
+git clone --depth 1 https://github.com/romkatv/powerlevel10k.git             "$INSTALL_DIR/plugins/powerlevel10k"               2>/dev/null  # cadangan jika mau ganti theme nanti
 
-# --- BAGIAN 5: BANNER FULL WIDTH ---
-echo -e "${C_LABEL}[*] Membuat Banner Full Screen...${NC}"
+# ─── 6. Banner & Info System Full-Width ─────────────────────────────────────
+echo -e "\( {C_LABEL}→ Membuat banner cosmic full-width... \){NC}"
+
 cat > "$INSTALL_DIR/banner.sh" <<'EOF'
-#!/bin/bash
+#!/usr/bin/env bash
 
-# --- WARNA ---
-C_BORDER='\033[38;5;93m'
-C_TITLE='\033[38;5;213m'
-C_LBL='\033[38;5;141m'
-C_VAL='\033[38;5;255m'
-C_BAR='\033[38;5;129m'
-C_OFF='\033[38;5;236m'
-RS='\033[0m'
+# Warna (sama dengan install.sh)
+C_BORDER='\033[38;5;93m'; C_TITLE='\033[38;5;129m'; C_HL='\033[38;5;213m'
+C_LABEL='\033[38;5;147m'; C_VALUE='\033[38;5;231m'; C_BAR_ON='\033[38;5;213m'
+C_BAR_OFF='\033[38;5;237m'; NC='\033[0m'
 
-# --- GET SCREEN SIZE ---
-COLS=$(tput cols)
-if [ -z "$COLS" ] || [ "$COLS" -lt 10 ]; then COLS=50; fi
-
-# Lebar area dalam box (Total - 2 char border)
+COLS=$(tput cols 2>/dev/null || echo 80)
+(( COLS < 60 )) && COLS=60
 WIDTH=$((COLS - 2))
 
-# --- HELPER FUNCTIONS ---
+print_full_line() { printf "${C_BORDER}─%.0s" $(seq 1 \( COLS); echo " \){NC}"; }
 
-# 1. Print Garis Horizontal Penuh
-print_line() {
-    # Membuat string dash sepanjang WIDTH
-    local dash_line=$(printf '%*s' "$WIDTH" | tr ' ' '─')
-    echo -e "${C_BORDER}╭${dash_line}╮${RS}"
+print_box_top()    { echo -e "\( {C_BORDER}╭ \)(printf '─%.0s' $(seq 1 \( WIDTH))╮ \){NC}"; }
+print_box_bottom() { echo -e "\( {C_BORDER}╰ \)(printf '─%.0s' $(seq 1 \( WIDTH))╯ \){NC}"; }
+print_box_mid()    { echo -e "\( {C_BORDER}├ \)(printf '─%.0s' $(seq 1 \( WIDTH))┤ \){NC}"; }
+
+print_centered() {
+    local text="$1" color="${2:-$C_TITLE}"
+    local len=${#text}
+    local pad=$(( (WIDTH - len) / 2 ))
+    echo -e "\( {C_BORDER}│ \){NC}$(printf ' %.0s' $(seq 1 \( pad)) \){color}\( {text} \){NC}$(printf ' %.0s' $(seq 1 \( ((WIDTH - len - pad)))) \){C_BORDER}│${NC}"
 }
 
-print_bottom() {
-    local text=" [!] NebulaX Protected "
-    local text_len=${#text}
-    local line_len=$((WIDTH - text_len))
-    local left_len=$((line_len / 2))
-    local right_len=$((line_len - left_len))
-    
-    local left_dash=$(printf '%*s' "$left_len" | tr ' ' '─')
-    local right_dash=$(printf '%*s' "$right_len" | tr ' ' '─')
-    
-    echo -e "${C_BORDER}╰${left_dash}${C_LBL}${text}${C_BORDER}${right_dash}╯${RS}"
-}
-
-print_mid_line() {
-     local dash_line=$(printf '%*s' "$WIDTH" | tr ' ' '─')
-     echo -e "${C_BORDER}├${dash_line}┤${RS}"
-}
-
-# 2. Print Header dengan Judul di Tengah
-print_header() {
-    local title=" System "
-    local title_len=${#title}
-    local line_len=$((WIDTH - title_len))
-    local left_len=$((line_len / 2))
-    local right_len=$((line_len - left_len))
-    
-    local left_dash=$(printf '%*s' "$left_len" | tr ' ' '─')
-    local right_dash=$(printf '%*s' "$right_len" | tr ' ' '─')
-    
-    echo -e "${C_BORDER}╭${left_dash}${C_TITLE}${title}${C_BORDER}${right_dash}╮${RS}"
-}
-
-# 3. Print Row (Left Text ...... Right Text)
 print_row() {
-    local key1="$1"
-    local val1="$2"
-    local key2="$3"
-    local val2="$4"
-    
-    # Hitung panjang teks tanpa warna (approx)
-    local len1=$(( ${#key1} + ${#val1} + 1 )) # +1 space
-    local len2=$(( ${#key2} + ${#val2} + 1 ))
-    
-    # Hitung spasi tengah
-    local spaces=$((WIDTH - len1 - len2 - 4)) # -4 padding
-    if [ $spaces -lt 1 ]; then spaces=1; fi
-    local space_str=$(printf '%*s' "$spaces" "")
-    
-    echo -e "${C_BORDER}│ ${C_LBL}${key1} ${C_VAL}${val1}${space_str} ${C_LBL}${key2} ${C_VAL}${val2} ${C_BORDER}│${RS}"
+    local left="$1" right="$2"
+    local l_len=\( {#left} r_len= \){#right}
+    local gap=$((WIDTH - l_len - r_len - 4))
+    (( gap < 4 )) && gap=4
+    echo -e "${C_BORDER}│ \( {C_LABEL} \){left} \( {C_VALUE} \){right}$(printf ' %.0s' $(seq 1 \( gap)) \){C_BORDER}│${NC}"
 }
 
-# 4. Print Bar Full Width
-print_bar_row() {
-    local label="$1"
-    local perc="$2"
-    local text_val="$3" # e.g. 2GB/4GB
-    
-    # Hitung lebar bar yang tersedia
-    # Format: │ Label [BAR........] Perc │
-    # Margin kiri 1, Label, Spasi 1, Bar, Spasi 1, Perc, Margin Kanan 1
-    local label_len=${#label}
-    local perc_len=${#perc}
-    local static_len=$((label_len + perc_len + 6)) # borders & brackets
-    local bar_width=$((WIDTH - static_len))
-    
-    if [ $bar_width -lt 5 ]; then bar_width=5; fi
-    
-    local filled=$(( (perc * bar_width) / 100 ))
-    local empty=$((bar_width - filled))
-    
-    # Buat visual bar
-    local bar_viz=""
-    if [ $filled -gt 0 ]; then
-        bar_viz+="${C_BAR}"
-        bar_viz+=$(printf '%*s' "$filled" | tr ' ' '█')
-    fi
-    bar_viz+="${C_OFF}"
-    bar_viz+=$(printf '%*s' "$empty" | tr ' ' '▒')
-    
-    echo -e "${C_BORDER}│ ${C_LBL}${label} ${RS}[${bar_viz}${RS}] ${C_VAL}${perc}% ${C_BORDER}│${RS}"
-    
-    # Subtext (Value Detail) - Centered under the bar roughly
-    # Biar simpel, align left agak menjorok
-    echo -e "${C_BORDER}│ $(printf '%*s' "$((label_len+2))" "") ${C_OFF}${text_val} ${RS}$(printf '%*s' "$((WIDTH - label_len - ${#text_val} - 4))" "") ${C_BORDER}│${RS}"
+print_bar() {
+    local label="$1" perc="$2" detail="$3"
+    local lbl_len=${#label}
+    local avail=$((WIDTH - lbl_len - ${#perc} - 12))
+    (( avail < 10 )) && avail=10
+
+    local fill=$(( (perc * avail) / 100 ))
+    local empt=$((avail - fill))
+
+    local bar="\( {C_BAR_ON} \)(printf '█%.0s' $(seq 1 \( fill)) \){C_BAR_OFF}$(printf '▒%.0s' $(seq 1 $empt))"
+
+    echo -e "${C_BORDER}│ \( {C_LABEL} \){label} \( {C_BORDER}[ \){NC}\( {bar} \){C_BORDER}] \( {C_VALUE} \){perc}%${NC} \( {C_BORDER}│ \){NC}"
+    [[ -n "\( detail" ]] && echo -e " \){C_BORDER}│ \( {NC} \)(printf ' %.0s' $(seq 1 \( ((lbl_len+2)))) \){C_VALUE}\( {detail} \){NC}$(printf ' %.0s' $(seq 1 $((WIDTH - lbl_len - \( {#detail} - 6)))) \){C_BORDER}│${NC}"
 }
 
+# ── Gather Info ──────────────────────────────────────────────────────────────
+user=$(whoami)
+date=$(date +%Y-%m-%d)
+time=$(date +%H:%M:%S)
+kernel=$(uname -r | cut -d'.' -f1-2)
+shell=${SHELL##*/}
 
-# --- GATHER INFO ---
-USER=$(whoami)
-DATE=$(date +%Y-%m-%d)
-TIME=$(date +%H:%M:%S)
-SHELL_NAME=${SHELL##*/}
-KERNEL=$(uname -r | cut -d'-' -f1)
-
-# RAM
-if [ -f /proc/meminfo ]; then
-    MEM_TOTAL=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-    MEM_FREE=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
-    if [ -z "$MEM_FREE" ]; then MEM_FREE=$(grep MemFree /proc/meminfo | awk '{print $2}'); fi
-    MEM_USED=$((MEM_TOTAL - MEM_FREE))
-    MEM_PERC=$(( (MEM_USED * 100) / MEM_TOTAL ))
-    MEM_TXT="$(echo "scale=1; $MEM_USED/1024/1024" | bc)G / $(echo "scale=1; $MEM_TOTAL/1024/1024" | bc)G"
+# RAM (cross-platform sebisa mungkin)
+if [[ -f /proc/meminfo ]]; then
+    total=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    free=$(grep MemAvailable /proc/meminfo | awk '{print $2}' || grep MemFree | awk '{print $2}')
+    used=$((total - free))
+    perc=$(( (used * 100) / total ))
+    ram_txt="$(bc <<< "scale=1; $used/1024/1024")G / $(bc <<< "scale=1; $total/1024/1024")G"
 else
-    MEM_PERC=0
-    MEM_TXT="?"
+    perc=0; ram_txt="n/a"
 fi
 
-# DISK
-DISK_PERC=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
-DISK_TXT="$(df -h / | awk 'NR==2 {print $3}') / $(df -h / | awk 'NR==2 {print $2}')"
+# Disk root
+disk_perc=$(df -h / 2>/dev/null | awk 'NR==2 {print $5}' | tr -d '%' || echo "n/a")
+disk_txt=$(df -h / 2>/dev/null | awk 'NR==2 {print $3" / "$2}' || echo "n/a")
 
-# --- RENDER ---
 clear
+print_full_line
+echo ""
+print_centered "   .     .     .     N E B U L A X     .     .     .   " "$C_HL"
+echo ""
+cat <<'ART' | sed "s/./\( {C_BORDER}& \){NC}/g" | sed "s/^/$(printf ' %.0s' $(seq 1 $(( (COLS-44)/2 ))))/"
+       🌌✨      .          .      🌠
+     .      .     .     .      .     .
+   .    ✧    .      .     .      .     .
+      .     .     .     .      .     .
+        .      .     .     .      .
+ART
 echo ""
 
-# 1. PLANET CENTERED
-pad=$(( (COLS - 30) / 2 ))
-if [ $pad -lt 0 ]; then pad=0; fi
-P_PAD=$(printf '%*s' "$pad" "")
+print_box_top
+print_centered " SYSTEM STATUS " "$C_TITLE"
+print_box_mid
+print_row "User     :" "$user" 
+print_row "Date     :" "$date $time"
+print_row "Shell    :" "$shell"
+print_row "Kernel   :" "$kernel"
+print_row "OS       :" "${OS_TYPE^}"
+print_box_mid
+print_bar "RAM      " "$perc" "$ram_txt"
+print_bar "Disk /   " "$disk_perc" "$disk_txt"
+print_box_bottom
 
-echo -e "${P_PAD}${C_BORDER}         ,MMM8&&&.            "
-echo -e "${P_PAD}${C_BORDER}    _MMMMMMM888888&.          "
-echo -e "${P_PAD}${C_BORDER}  MMMMMM88888888888&          "
-echo -e "${P_PAD}${C_BORDER}  MMMMMM888888888888          "
-echo -e "${P_PAD}${C_BORDER}   \`MMMM88888888888'          "
-echo -e "${P_PAD}${C_BORDER}       \`YMM8888888'           "
-echo -e "${P_PAD}${C_BORDER}         \`\"\"\"\"\"\"'             "
-echo ""
-
-# 2. BOX FULL WIDTH
-print_header
-print_row "User" "$USER" "Time" "$TIME"
-print_row "Date" "$DATE" "Shell" "$SHELL_NAME"
-print_row "OS" "Android" "Kern" "${KERNEL:0:10}"
-print_mid_line
-print_bar_row "RAM " "$MEM_PERC" "$MEM_TXT"
-print_bar_row "Disk" "$DISK_PERC" "$DISK_TXT"
-print_bottom
-echo ""
+echo -e "\n\( {C_LABEL}  nebulaX ready • ketik ' \){C_HL}help\( {C_LABEL}' untuk daftar perintah \){NC}\n"
 EOF
+
 chmod +x "$INSTALL_DIR/banner.sh"
 
-# --- BAGIAN 6: SECURITY BOT ---
-cat > "$INSTALL_DIR/bin/guard.sh" <<'EOF'
-#!/bin/bash
-echo "Scanning..."
-netstat -tulpn 2>/dev/null | grep -E ":4444|:5555" && echo "PORT BAHAYA DETECTED!"
-find . -maxdepth 2 -name ".*.sh" && echo "HIDDEN SCRIPT DETECTED!"
-EOF
-chmod +x "$INSTALL_DIR/bin/guard.sh"
+# ─── 7. Beberapa helper di bin/ ─────────────────────────────────────────────
+mkdir -p "$INSTALL_DIR/bin"
 
-# --- BAGIAN 7: THEMA ---
-cat > "$INSTALL_DIR/nebulaX.zsh-theme" <<EOF
-P_1='%F{093}'
-P_2='%F{129}'
-P_3='%F{213}'
-RESET='%f'
-setopt prompt_subst
-function git_stat() {
-  ref=\$(git symbolic-ref HEAD 2> /dev/null) || return
-  echo "\${P_3}(\${ref#refs/heads/})\${RESET}"
+cat > "$INSTALL_DIR/bin/help" <<'EOF'
+#!/usr/bin/env bash
+echo -e "\n\( {C_HL}nebulaX Helpers \){NC}"
+echo "──────────────────────────────────────────────"
+echo " \( {C_LABEL}scan \){NC}        → cek port mencurigakan & file tersembunyi"
+echo " \( {C_LABEL}update \){NC}      → update paket (sesuai OS)"
+echo " \( {C_LABEL}weather \){NC}     → cuaca kota (butuh curl)"
+echo " \( {C_LABEL}myip \){NC}        → tampilkan IP publik"
+echo " \( {C_LABEL}clearcache \){NC}  → bersihkan cache zsh & history"
+echo -e "\nTambahkan sendiri di $HOME/.nebulaX/bin/\n"
+EOF
+
+cat > "$INSTALL_DIR/bin/scan" <<'EOF'
+#!/usr/bin/env bash
+echo -e "\( {C_LABEL}Scanning suspicious ports & files... \){NC}"
+ss -tulpn 2>/dev/null | grep -E ':(4444|5555|1337|6666|13377)' && echo "\( {C_HL}Dangerous port detected! \){NC}"
+find ~ -maxdepth 3 -type f -name ".*.sh" -o -name "*.py" -o -name "*.exe" 2>/dev/null
+EOF
+
+cat > "$INSTALL_DIR/bin/myip" <<'EOF'
+#!/usr/bin/env bash
+curl -s ifconfig.me || curl -s icanhazip.com || echo "Cannot reach IP check service"
+EOF
+
+cat > "$INSTALL_DIR/bin/update" <<'EOF'
+#!/usr/bin/env bash
+if command -v pkg >/dev/null; then pkg update -y && pkg upgrade -y
+elif command -v apt >/dev/null; then sudo apt update && sudo apt upgrade -y
+elif command -v dnf >/dev/null; then sudo dnf update -y
+elif command -v brew >/dev/null; then brew update && brew upgrade
+fi
+EOF
+
+chmod +x "$INSTALL_DIR/bin/"*
+
+# ─── 8. Tema Prompt sederhana tapi cosmic ───────────────────────────────────
+cat > "$INSTALL_DIR/nebulaX.zsh-theme" <<'EOF'
+P1='%F{093}' P2='%F{129}' P3='%F{213}' P4='%F{165}' RESET='%f'
+
+git_info() {
+  ref=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+  echo "\( {P4}( \){ref})${RESET}"
 }
-PROMPT="\${P_1}┌──\${P_2}[\${P_3}%~\${P_2}] \$(git_stat)
-\${P_1}└─\${P_3}😈 \${RESET}"
+
+PS1="\( {P1}┌─ \){P2}[\( {P3}%2~ \){P2}]${RESET} \$(git_info)
+\( {P1}└─ \){P3}⋆⁺₊☾⁺₊⋆⁺₊ ${RESET}"
+RPROMPT="\( {P4}%* \){RESET}"
 EOF
 
+# ─── 9. .zshrc utama ────────────────────────────────────────────────────────
 cat > "$HOME/.zshrc" <<EOF
-# --- NEBULA-X CONFIG ---
-bash $INSTALL_DIR/banner.sh
+# ─── nebulaX ────────────────────────────────────────────────────────────────
+clear && bash $INSTALL_DIR/banner.sh
 
+export PATH="\$PATH:$INSTALL_DIR/bin"
+
+# History
+HISTSIZE=20000
+SAVEHIST=20000
 HISTFILE=\$HOME/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
-setopt SHARE_HISTORY
+setopt SHARE_HISTORY APPEND_HISTORY INC_APPEND_HISTORY
 
-export PATH=\$PATH:$INSTALL_DIR/bin
-
-source $INSTALL_DIR/nebulaX.zsh-theme
-fpath=($INSTALL_DIR/plugins/zsh-completions/src \$fpath)
+# Plugins
 source $INSTALL_DIR/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source $INSTALL_DIR/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source $INSTALL_DIR/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 
+# Keybinding
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
-zstyle ':completion:*' menu select
-zstyle ':completion:*' list-colors "\${(s.:.)LS_COLORS}"
 
-alias c='clear'
-alias scan='bash $INSTALL_DIR/bin/guard.sh'
-alias install='$PKG_MAN'
+# Completion
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+# Theme
+source $INSTALL_DIR/nebulaX.zsh-theme
+
+# Aliases umum
+alias cl='clear'
+alias h='help'
+alias s='scan'
+alias up='update'
+alias i='$PKG_INSTALL'
+alias weather='curl wttr.in'
+alias ll='ls -lah --color=auto'
+alias nanozsh='nano ~/.zshrc'
+
+# Supaya langsung kelihatan banner setelah install
 EOF
 
-chsh -s zsh
-echo -e "${C_TITLE}INSTALASI SELESAI.${NC}"
-echo -e "${C_LABEL}Ketik 'zsh' untuk melihat Banner Full Width.${NC}"
+# ─── 10. Ganti shell ke zsh (jika memungkinkan) ─────────────────────────────
+if command -v zsh >/dev/null; then
+    chsh -s "\( (command -v zsh)" 2>/dev/null || echo -e " \){C_LABEL}chsh gagal. Jalankan 'zsh' secara manual.${NC}"
+fi
+
+echo -e "\n\( {C_TITLE}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ \){NC}"
+echo -e "\( {C_TITLE}┃       nebulaX berhasil terpasang!   ┃ \){NC}"
+echo -e "\( {C_TITLE}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ \){NC}"
+echo -e "${C_LABEL}→ Ketik \( {C_HL}zsh \){C_LABEL} atau buka terminal baru${NC}"
+echo -e "${C_LABEL}→ Ketik \( {C_HL}help \){C_LABEL} untuk melihat perintah bantu${NC}\n"
