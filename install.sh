@@ -22,11 +22,11 @@ else
 fi
 
 clear
-echo -e "\( {C_MAGENTA} \){C_BOLD}══════════════════════════════════════════════${NC}"
+echo -e "${C_MAGENTA}${C_BOLD}══════════════════════════════════════════════${NC}"
 echo -e "          nebulaX  •  ULTIMATE TERMINAL${NC}"
-echo -e "\( {C_MAGENTA}══════════════════════════════════════════════ \){NC}\n"
+echo -e "${C_MAGENTA}══════════════════════════════════════════════${NC}\n"
 
-echo -e "\( {C_CYAN}→ Mengamankan shell lain... \){NC}"
+echo -e "${C_CYAN}→ Mengamankan shell lain...${NC}"
 [ -d "$HOME/.oh-my-zsh" ]       && mv "$HOME/.oh-my-zsh"       "$HOME/.oh-my-zsh.bak.nebulax" 2>/dev/null
 [ -f "$HOME/.zshrc" ]           && mv "$HOME/.zshrc"           "$HOME/.zshrc.bak.pre-nebulax" 2>/dev/null
 
@@ -38,14 +38,14 @@ else
     PKG="sudo apt install -y"
 fi
 
-echo -e "\( {C_CYAN}→ Install dependensi... \){NC}"
+echo -e "${C_CYAN}→ Install dependensi...${NC}"
 $PKG zsh git curl wget bc 2>/dev/null || true
 
 INSTALL_DIR="$HOME/.nebulaX"
 rm -rf "$INSTALL_DIR" 2>/dev/null
 mkdir -p "$INSTALL_DIR"/{plugins,bin}
 
-echo -e "\( {C_CYAN}→ Download plugins... \){NC}"
+echo -e "${C_CYAN}→ Download plugins...${NC}"
 git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions     "$INSTALL_DIR/plugins/zsh-autosuggestions"     2>/dev/null
 git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting "$INSTALL_DIR/plugins/zsh-syntax-highlighting" 2>/dev/null
 git clone --depth 1 https://github.com/zsh-users/zsh-history-substring-search "$INSTALL_DIR/plugins/zsh-history-substring-search" 2>/dev/null
@@ -59,23 +59,23 @@ R='\033[0m'  B='\033[1m'  M='\033[35m'  C='\033[36m'  W='\033[97m'
 
 clear
 
-COLS=\( {COLUMNS:- \)(stty size 2>/dev/null | cut -d' ' -f2 || echo 80)}
+COLS=${COLUMNS:-$(stty size 2>/dev/null | cut -d' ' -f2 || echo 80)}
 (( COLS < 50 )) && COLS=50
 
 line() { printf '─%.0s' $(seq 1 $COLS); }
 
-echo -e "\( {M} \){B}"
+echo -e "${M}${B}"
 line
 echo "               nebulaX  •  TERMINAL SUITE"
 line
 echo -e "${R}"
 
 echo ""
-echo -e "  \( {C}User    : \){W} $(whoami)"
-echo -e "  \( {C}Date    : \){W} $(date '+%Y-%m-%d %H:%M')"
-echo -e "  \( {C}Shell   : \){W} zsh"
+echo -e "  ${C}User    : ${W} $(whoami)"
+echo -e "  ${C}Date    : ${W} $(date '+%Y-%m-%d %H:%M')"
+echo -e "  ${C}Shell   : ${W} zsh"
 echo ""
-echo -e "  \( {M} \){B}»»»  nebulaX aktif  «««${R}"
+echo -e "  ${M}${B}»»»  nebulaX aktif  «««${R}"
 echo ""
 echo -e "  ${C}ketik ${W}help ${C}untuk perintah bantu"
 echo ""
@@ -140,8 +140,8 @@ alias myip='myip'
 alias up='pkg update -y && pkg upgrade -y'
 EOF
 
-echo -e "\n\( {C_GREEN} \){C_BOLD}nebulaX berhasil terpasang!${R}"
-echo -e "Ketik \( {C_WHITE}zsh \){R} atau tutup & buka Termux lagi"
-echo -e "Lalu ketik \( {C_WHITE}help \){R} untuk lihat perintah\n"
+echo -e "\n${C_GREEN}${C_BOLD}nebulaX berhasil terpasang!${NC}"
+echo -e "Ketik ${C_WHITE}zsh${NC} atau tutup & buka Termux lagi"
+echo -e "Lalu ketik ${C_WHITE}help${NC} untuk lihat perintah\n"
 
 chsh -s zsh 2>/dev/null || echo "Ganti shell manual: chsh -s zsh"
