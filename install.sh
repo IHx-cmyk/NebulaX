@@ -1,65 +1,48 @@
 #!/bin/bash
 
 # --- WARNA PALET UNGU NEBULA ---
-# Menggunakan kode ANSI 256 untuk presisi warna
 C_BORDER='\033[38;5;93m'   # Ungu Gelap (Border)
-C_TITLE='\033[38;5;129m'  # Ungu Judul
-C_LABEL='\033[38;5;141m'  # Ungu Label Info
-C_VALUE='\033[38;5;255m'  # Putih (Isi Info)
-C_BAR_ON='\033[38;5;213m' # Pink/Ungu (Bar Penuh)
+C_TITLE='\033[38;5;129m'   # Ungu Judul
+C_LABEL='\033[38;5;141m'   # Ungu Label Info
+C_VALUE='\033[38;5;255m'   # Putih (Isi Info)
+C_BAR_ON='\033[38;5;213m'  # Pink/Ungu (Bar Penuh)
 C_BAR_OFF='\033[38;5;236m' # Abu Gelap (Bar Kosong)
 NC='\033[0m'
 
 clear
 echo -e "${C_TITLE}"
 echo "========================================"
-echo "   NEBULAX | ULTIMATE "
+echo "   NEBULAX | ULTIMATE FULL WIDTH "
 echo "========================================"
 echo -e "${NC}"
 
-# --- BAGIAN 1: NEUTRALIZE RIVALS (MATIKAN TEMA LAIN) ---
-echo -e "${C_LABEL}[*] Mendeteksi & Mengamankan Shell Lain...${NC}"
-
-# 1. Matikan Fish
+# --- BAGIAN 1: NEUTRALIZE RIVALS ---
+echo -e "${C_LABEL}[*] Mengamankan Shell Lain...${NC}"
 if [ -d "$HOME/.config/fish" ]; then
     mv "$HOME/.config/fish" "$HOME/.config/fish.old.nebula"
-    echo -e "${C_BORDER}    -> Konfigurasi Fish dinonaktifkan (Backup: fish.old.nebula)${NC}"
 fi
-
-# 2. Matikan Oh-My-Zsh atau Zsh lama
 if [ -d "$HOME/.oh-my-zsh" ]; then
     mv "$HOME/.oh-my-zsh" "$HOME/.oh-my-zsh.old.nebula"
-    echo -e "${C_BORDER}    -> Oh-My-Zsh dinonaktifkan.${NC}"
 fi
-
-# 3. Backup .zshrc lama
 if [ -f "$HOME/.zshrc" ]; then
     mv "$HOME/.zshrc" "$HOME/.zshrc.backup_pre_nebulax"
-    echo -e "${C_BORDER}    -> .zshrc lama diamankan.${NC}"
 fi
 
 # --- BAGIAN 2: INSTALL DEPENDENCIES ---
 echo -e "${C_LABEL}[*] Menginstall Core System...${NC}"
-
-# Deteksi Package Manager
 if [ -f /data/data/com.termux/files/usr/bin/bash ]; then
     PKG_MAN="pkg install -y"
-    OS_TAG="Android"
 elif [ -f /etc/debian_version ]; then
     PKG_MAN="sudo apt install -y"
-    OS_TAG="Linux"
-elif [ -f /etc/arch-release ]; then
-    PKG_MAN="sudo pacman -S --noconfirm"
-    OS_TAG="Linux"
 else
     PKG_MAN="pkg install -y"
 fi
 
 $PKG_MAN zsh git curl wget tar unzip unrar grep bc net-tools
 
-# --- BAGIAN 3: SETUP NEBULAX DIR ---
+# --- BAGIAN 3: SETUP DIR ---
 INSTALL_DIR="$HOME/.nebulaX"
-if [ -d "$INSTALL_DIR" ]; then rm -rf "$INSTALL_DIR"; fi
+rm -rf "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR/plugins"
 mkdir -p "$INSTALL_DIR/bin"
 
@@ -70,8 +53,8 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$INSTALL_DIR
 git clone https://github.com/zsh-users/zsh-completions "$INSTALL_DIR/plugins/zsh-completions" --depth 1
 git clone https://github.com/zsh-users/zsh-history-substring-search "$INSTALL_DIR/plugins/zsh-history-substring-search" --depth 1
 
-# --- BAGIAN 5: BANNER STELLAR (CENTERED LOGIC) ---
-echo -e "${C_LABEL}[*] Membuat Banner Stellar Center...${NC}"
+# --- BAGIAN 5: BANNER FULL WIDTH ---
+echo -e "${C_LABEL}[*] Membuat Banner Full Screen...${NC}"
 cat > "$INSTALL_DIR/banner.sh" <<'EOF'
 #!/bin/bash
 
@@ -84,135 +67,160 @@ C_BAR='\033[38;5;129m'
 C_OFF='\033[38;5;236m'
 RS='\033[0m'
 
-# --- FUNGSI TENGAH (CENTER) ---
-print_center() {
-    local text="$1"
-    local cols=$(tput cols)
-    local len=${#text}
-    # Hapus kode warna untuk hitung panjang asli
-    local clean_text=$(echo -e "$text" | sed "s/\x1B\[[0-9;]*[a-zA-Z]//g")
-    local clean_len=${#clean_text}
-    
-    local pad=$(( (cols - clean_len) / 2 ))
-    if [ $pad -lt 0 ]; then pad=0; fi
-    printf "%${pad}s" " "
-    echo -e "$text"
+# --- GET SCREEN SIZE ---
+COLS=$(tput cols)
+if [ -z "$COLS" ] || [ "$COLS" -lt 10 ]; then COLS=50; fi
+
+# Lebar area dalam box (Total - 2 char border)
+WIDTH=$((COLS - 2))
+
+# --- HELPER FUNCTIONS ---
+
+# 1. Print Garis Horizontal Penuh
+print_line() {
+    # Membuat string dash sepanjang WIDTH
+    local dash_line=$(printf '%*s' "$WIDTH" | tr ' ' '─')
+    echo -e "${C_BORDER}╭${dash_line}╮${RS}"
 }
 
-# --- INFO SYSTEM ---
+print_bottom() {
+    local text=" [!] NebulaX Protected "
+    local text_len=${#text}
+    local line_len=$((WIDTH - text_len))
+    local left_len=$((line_len / 2))
+    local right_len=$((line_len - left_len))
+    
+    local left_dash=$(printf '%*s' "$left_len" | tr ' ' '─')
+    local right_dash=$(printf '%*s' "$right_len" | tr ' ' '─')
+    
+    echo -e "${C_BORDER}╰${left_dash}${C_LBL}${text}${C_BORDER}${right_dash}╯${RS}"
+}
+
+print_mid_line() {
+     local dash_line=$(printf '%*s' "$WIDTH" | tr ' ' '─')
+     echo -e "${C_BORDER}├${dash_line}┤${RS}"
+}
+
+# 2. Print Header dengan Judul di Tengah
+print_header() {
+    local title=" System "
+    local title_len=${#title}
+    local line_len=$((WIDTH - title_len))
+    local left_len=$((line_len / 2))
+    local right_len=$((line_len - left_len))
+    
+    local left_dash=$(printf '%*s' "$left_len" | tr ' ' '─')
+    local right_dash=$(printf '%*s' "$right_len" | tr ' ' '─')
+    
+    echo -e "${C_BORDER}╭${left_dash}${C_TITLE}${title}${C_BORDER}${right_dash}╮${RS}"
+}
+
+# 3. Print Row (Left Text ...... Right Text)
+print_row() {
+    local key1="$1"
+    local val1="$2"
+    local key2="$3"
+    local val2="$4"
+    
+    # Hitung panjang teks tanpa warna (approx)
+    local len1=$(( ${#key1} + ${#val1} + 1 )) # +1 space
+    local len2=$(( ${#key2} + ${#val2} + 1 ))
+    
+    # Hitung spasi tengah
+    local spaces=$((WIDTH - len1 - len2 - 4)) # -4 padding
+    if [ $spaces -lt 1 ]; then spaces=1; fi
+    local space_str=$(printf '%*s' "$spaces" "")
+    
+    echo -e "${C_BORDER}│ ${C_LBL}${key1} ${C_VAL}${val1}${space_str} ${C_LBL}${key2} ${C_VAL}${val2} ${C_BORDER}│${RS}"
+}
+
+# 4. Print Bar Full Width
+print_bar_row() {
+    local label="$1"
+    local perc="$2"
+    local text_val="$3" # e.g. 2GB/4GB
+    
+    # Hitung lebar bar yang tersedia
+    # Format: │ Label [BAR........] Perc │
+    # Margin kiri 1, Label, Spasi 1, Bar, Spasi 1, Perc, Margin Kanan 1
+    local label_len=${#label}
+    local perc_len=${#perc}
+    local static_len=$((label_len + perc_len + 6)) # borders & brackets
+    local bar_width=$((WIDTH - static_len))
+    
+    if [ $bar_width -lt 5 ]; then bar_width=5; fi
+    
+    local filled=$(( (perc * bar_width) / 100 ))
+    local empty=$((bar_width - filled))
+    
+    # Buat visual bar
+    local bar_viz=""
+    if [ $filled -gt 0 ]; then
+        bar_viz+="${C_BAR}"
+        bar_viz+=$(printf '%*s' "$filled" | tr ' ' '█')
+    fi
+    bar_viz+="${C_OFF}"
+    bar_viz+=$(printf '%*s' "$empty" | tr ' ' '▒')
+    
+    echo -e "${C_BORDER}│ ${C_LBL}${label} ${RS}[${bar_viz}${RS}] ${C_VAL}${perc}% ${C_BORDER}│${RS}"
+    
+    # Subtext (Value Detail) - Centered under the bar roughly
+    # Biar simpel, align left agak menjorok
+    echo -e "${C_BORDER}│ $(printf '%*s' "$((label_len+2))" "") ${C_OFF}${text_val} ${RS}$(printf '%*s' "$((WIDTH - label_len - ${#text_val} - 4))" "") ${C_BORDER}│${RS}"
+}
+
+
+# --- GATHER INFO ---
 USER=$(whoami)
-HOST=$(hostname)
 DATE=$(date +%Y-%m-%d)
 TIME=$(date +%H:%M:%S)
 SHELL_NAME=${SHELL##*/}
 KERNEL=$(uname -r | cut -d'-' -f1)
 
-if grep -q "Termux" /data/data/com.termux/files/usr/bin/login 2>/dev/null; then
-    OS="Android Termux"
-elif [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$NAME
-else
-    OS=$(uname -o)
-fi
-
-# RAM & DISK BAR CALCULATION
-# (Simple logic for Termux/Linux)
+# RAM
 if [ -f /proc/meminfo ]; then
     MEM_TOTAL=$(grep MemTotal /proc/meminfo | awk '{print $2}')
     MEM_FREE=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
     if [ -z "$MEM_FREE" ]; then MEM_FREE=$(grep MemFree /proc/meminfo | awk '{print $2}'); fi
     MEM_USED=$((MEM_TOTAL - MEM_FREE))
     MEM_PERC=$(( (MEM_USED * 100) / MEM_TOTAL ))
-    
-    # Convert to GB/MB
-    MEM_TXT_USED=$(echo "scale=2; $MEM_USED/1024/1024" | bc)
-    MEM_TXT_TOTAL=$(echo "scale=2; $MEM_TOTAL/1024/1024" | bc)
+    MEM_TXT="$(echo "scale=1; $MEM_USED/1024/1024" | bc)G / $(echo "scale=1; $MEM_TOTAL/1024/1024" | bc)G"
 else
-    MEM_PERC=50
-    MEM_TXT_USED="?"
-    MEM_TXT_TOTAL="?"
+    MEM_PERC=0
+    MEM_TXT="?"
 fi
 
 # DISK
-DISK_USED=$(df -h / | awk 'NR==2 {print $3}')
-DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}')
 DISK_PERC=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+DISK_TXT="$(df -h / | awk 'NR==2 {print $3}') / $(df -h / | awk 'NR==2 {print $2}')"
 
-# Draw Bar Function
-draw_bar() {
-    local perc=$1
-    local width=15
-    local filled=$(( (perc * width) / 100 ))
-    local empty=$(( width - filled ))
-    
-    printf "${C_BAR}"
-    for ((i=0; i<filled; i++)); do printf "█"; done
-    printf "${C_OFF}"
-    for ((i=0; i<empty; i++)); do printf "▒"; done
-    printf "${RS}"
-}
-
-RAM_BAR=$(draw_bar $MEM_PERC)
-DISK_BAR=$(draw_bar $DISK_PERC)
-
-# --- ART & BOX ---
+# --- RENDER ---
 clear
 echo ""
 
-# 1. PLANET ASCII (CENTERED)
-# Planet ini mirip Saturnus
-print_center "${C_BORDER}         ,MMM8&&&.            "
-print_center "${C_BORDER}    _MMMMMMM888888&.          "
-print_center "${C_BORDER}  MMMMMM88888888888&          "
-print_center "${C_BORDER}  MMMMMM888888888888          "
-print_center "${C_BORDER}   \`MMMM88888888888'          "
-print_center "${C_BORDER}       \`YMM8888888'           "
-print_center "${C_BORDER}         \`\"\"\"\"\"\"'             "
+# 1. PLANET CENTERED
+pad=$(( (COLS - 30) / 2 ))
+if [ $pad -lt 0 ]; then pad=0; fi
+P_PAD=$(printf '%*s' "$pad" "")
+
+echo -e "${P_PAD}${C_BORDER}         ,MMM8&&&.            "
+echo -e "${P_PAD}${C_BORDER}    _MMMMMMM888888&.          "
+echo -e "${P_PAD}${C_BORDER}  MMMMMM88888888888&          "
+echo -e "${P_PAD}${C_BORDER}  MMMMMM888888888888          "
+echo -e "${P_PAD}${C_BORDER}   \`MMMM88888888888'          "
+echo -e "${P_PAD}${C_BORDER}       \`YMM8888888'           "
+echo -e "${P_PAD}${C_BORDER}         \`\"\"\"\"\"\"'             "
 echo ""
 
-# 2. BOX INFO (CENTERED BLOCK)
-# Kita bangun boxnya dulu dalam variabel, lalu print_center per baris
-# Format Box 
-
-L="${C_BORDER}│${RS}" # Garis kiri kanan
-# Lebar konten sekitar 50 char
-
-# Top Border dengan Judul "Sistema"
-line1="${C_BORDER}╭──────────── ${C_TITLE}System${C_BORDER} ────────────╮${RS}"
-print_center "$line1"
-
-# Isi Box
-# Baris 1: User & Time
-str=$(printf "${L} ${C_LBL}Usually ${C_VAL}%-10s   ${C_LBL}Time ${C_VAL}%-8s ${L}" "$USER" "$TIME")
-print_center "$str"
-
-# Baris 2: Date & Shell
-str=$(printf "${L} ${C_LBL}Date   ${C_VAL}%-10s   ${C_LBL}Shell ${C_VAL}%-7s  ${L}" "$DATE" "$SHELL_NAME")
-print_center "$str"
-
-# Baris 3: System & Kernel
-str=$(printf "${L} ${C_LBL}OS      ${C_VAL}%-10s   ${C_LBL}Kern  ${C_VAL}%-7s  ${L}" "${OS:0:10}" "${KERNEL:0:7}")
-print_center "$str"
-
-# Divider Tipis
-print_center "${C_BORDER}├─────────────────────────────────┤${RS}"
-
-# Baris RAM
-str=$(printf "${L} ${C_LBL}RAM   ${RS}%s ${C_VAL}%3s%%           ${L}" "$RAM_BAR" "$MEM_PERC")
-print_center "$str"
-str=$(printf "${L}       ${C_OFF}${MEM_TXT_USED}GB / ${MEM_TXT_TOTAL}GB${RS}                ${L}")
-print_center "$str"
-
-# Baris DISK
-str=$(printf "${L} ${C_LBL}Disk  ${RS}%s ${C_VAL}%3s%%           ${L}" "$DISK_BAR" "$DISK_PERC")
-print_center "$str"
-str=$(printf "${L}       ${C_OFF}${DISK_USED} / ${DISK_TOTAL}${RS}                     ${L}")
-print_center "$str"
-
-# Bottom Border (IP De ToR style footer)
-line_end="${C_BORDER}╰────── ${C_LBL}[!] ${C_VAL}Nebula${C_TITLE}X ${C_LBL}Protected ${C_BORDER}─────╯${RS}"
-print_center "$line_end"
+# 2. BOX FULL WIDTH
+print_header
+print_row "User" "$USER" "Time" "$TIME"
+print_row "Date" "$DATE" "Shell" "$SHELL_NAME"
+print_row "OS" "Android" "Kern" "${KERNEL:0:10}"
+print_mid_line
+print_bar_row "RAM " "$MEM_PERC" "$MEM_TXT"
+print_bar_row "Disk" "$DISK_PERC" "$DISK_TXT"
+print_bottom
 echo ""
 EOF
 chmod +x "$INSTALL_DIR/banner.sh"
@@ -220,14 +228,13 @@ chmod +x "$INSTALL_DIR/banner.sh"
 # --- BAGIAN 6: SECURITY BOT ---
 cat > "$INSTALL_DIR/bin/guard.sh" <<'EOF'
 #!/bin/bash
-# (Bot Security Standar NebulaX)
 echo "Scanning..."
 netstat -tulpn 2>/dev/null | grep -E ":4444|:5555" && echo "PORT BAHAYA DETECTED!"
 find . -maxdepth 2 -name ".*.sh" && echo "HIDDEN SCRIPT DETECTED!"
 EOF
 chmod +x "$INSTALL_DIR/bin/guard.sh"
 
-# --- BAGIAN 7: THEMA & ZSHRC ---
+# --- BAGIAN 7: THEMA ---
 cat > "$INSTALL_DIR/nebulaX.zsh-theme" <<EOF
 P_1='%F{093}'
 P_2='%F{129}'
@@ -238,7 +245,6 @@ function git_stat() {
   ref=\$(git symbolic-ref HEAD 2> /dev/null) || return
   echo "\${P_3}(\${ref#refs/heads/})\${RESET}"
 }
-# Prompt Simpel Elegan
 PROMPT="\${P_1}┌──\${P_2}[\${P_3}%~\${P_2}] \$(git_stat)
 \${P_1}└─\${P_3}😈 \${RESET}"
 EOF
@@ -270,7 +276,6 @@ alias scan='bash $INSTALL_DIR/bin/guard.sh'
 alias install='$PKG_MAN'
 EOF
 
-# --- BAGIAN 8: FINALISASI ---
 chsh -s zsh
 echo -e "${C_TITLE}INSTALASI SELESAI.${NC}"
-echo -e "${C_LABEL}Silakan ketik 'zsh' atau restart terminal.${NC}"
+echo -e "${C_LABEL}Ketik 'zsh' untuk melihat Banner Full Width.${NC}"
