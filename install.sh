@@ -12,7 +12,7 @@ NC='\033[0m'
 clear
 echo -e "${C_TITLE}"
 echo "========================================"
-echo "   NEBULAX | ULTIMATE FULL WIDTH "
+echo "   NEBULAX | ULTIMATE "
 echo "========================================"
 echo -e "${NC}"
 
