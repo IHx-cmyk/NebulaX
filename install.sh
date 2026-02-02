@@ -1,245 +1,276 @@
 #!/bin/bash
 
-# --- WARNA NEBULAX ---
-PURPLE='\033[1;35m'
-CYAN='\033[1;36m'
-GREEN='\033[1;32m'
-RED='\033[1;31m'
+# --- WARNA PALET UNGU NEBULA ---
+# Menggunakan kode ANSI 256 untuk presisi warna
+C_BORDER='\033[38;5;93m'   # Ungu Gelap (Border)
+C_TITLE='\033[38;5;129m'  # Ungu Judul
+C_LABEL='\033[38;5;141m'  # Ungu Label Info
+C_VALUE='\033[38;5;255m'  # Putih (Isi Info)
+C_BAR_ON='\033[38;5;213m' # Pink/Ungu (Bar Penuh)
+C_BAR_OFF='\033[38;5;236m' # Abu Gelap (Bar Kosong)
 NC='\033[0m'
 
 clear
-echo -e "${PURPLE}"
+echo -e "${C_TITLE}"
 echo "========================================"
-echo " N E B U L A - X | UNIVERSAL v1       "
+echo "   NEBULAX | ULTIMATE "
 echo "========================================"
 echo -e "${NC}"
 
-# --- 1. DETEKSI OS & PACKAGE MANAGER ---
-echo -e "${CYAN}[*] Mendeteksi Sistem Operasi...${NC}"
+# --- BAGIAN 1: NEUTRALIZE RIVALS (MATIKAN TEMA LAIN) ---
+echo -e "${C_LABEL}[*] Mendeteksi & Mengamankan Shell Lain...${NC}"
 
+# 1. Matikan Fish
+if [ -d "$HOME/.config/fish" ]; then
+    mv "$HOME/.config/fish" "$HOME/.config/fish.old.nebula"
+    echo -e "${C_BORDER}    -> Konfigurasi Fish dinonaktifkan (Backup: fish.old.nebula)${NC}"
+fi
+
+# 2. Matikan Oh-My-Zsh atau Zsh lama
+if [ -d "$HOME/.oh-my-zsh" ]; then
+    mv "$HOME/.oh-my-zsh" "$HOME/.oh-my-zsh.old.nebula"
+    echo -e "${C_BORDER}    -> Oh-My-Zsh dinonaktifkan.${NC}"
+fi
+
+# 3. Backup .zshrc lama
+if [ -f "$HOME/.zshrc" ]; then
+    mv "$HOME/.zshrc" "$HOME/.zshrc.backup_pre_nebulax"
+    echo -e "${C_BORDER}    -> .zshrc lama diamankan.${NC}"
+fi
+
+# --- BAGIAN 2: INSTALL DEPENDENCIES ---
+echo -e "${C_LABEL}[*] Menginstall Core System...${NC}"
+
+# Deteksi Package Manager
 if [ -f /data/data/com.termux/files/usr/bin/bash ]; then
-    OS_TYPE="Termux"
-    INSTALLER="pkg install -y"
-    SUDO=""
-elif [ -f /etc/arch-release ]; then
-    OS_TYPE="Arch Linux"
-    INSTALLER="sudo pacman -S --noconfirm"
-    SUDO="sudo"
+    PKG_MAN="pkg install -y"
+    OS_TAG="Android"
 elif [ -f /etc/debian_version ]; then
-    OS_TYPE="Debian/Ubuntu/Kali"
-    INSTALLER="sudo apt install -y"
-    SUDO="sudo"
+    PKG_MAN="sudo apt install -y"
+    OS_TAG="Linux"
+elif [ -f /etc/arch-release ]; then
+    PKG_MAN="sudo pacman -S --noconfirm"
+    OS_TAG="Linux"
 else
-    OS_TYPE="Unknown"
-    INSTALLER="pkg install -y" # Default fallback
-    SUDO=""
+    PKG_MAN="pkg install -y"
 fi
 
-echo -e "${GREEN}    -> Sistem terdeteksi: $OS_TYPE"
-echo -e "    -> Menggunakan installer: $INSTALLER ${NC}"
+$PKG_MAN zsh git curl wget tar unzip unrar grep bc net-tools
 
-# --- 2. INSTALL DEPENDENCIES ---
-echo -e "${CYAN}[*] Menginstall paket yang dibutuhkan...${NC}"
-# Update repo dulu
-if [[ "$OS_TYPE" == "Termux" ]]; then
-    pkg update -y && pkg upgrade -y
-elif [[ "$OS_TYPE" == "Debian/Ubuntu/Kali" ]]; then
-    sudo apt update
-fi
-
-# Install paket (zsh, git, tools)
-$INSTALLER zsh git curl wget tar unzip unrar grep bc net-tools
-
-# --- 3. SETUP FOLDER ---
+# --- BAGIAN 3: SETUP NEBULAX DIR ---
 INSTALL_DIR="$HOME/.nebulaX"
-if [ -d "$INSTALL_DIR" ]; then
-    rm -rf "$INSTALL_DIR"
-    echo -e "${PURPLE}[*] Mereset instalasi lama...${NC}"
-fi
+if [ -d "$INSTALL_DIR" ]; then rm -rf "$INSTALL_DIR"; fi
 mkdir -p "$INSTALL_DIR/plugins"
 mkdir -p "$INSTALL_DIR/bin"
 
-# --- 4. DOWNLOAD PLUGINS ---
-echo -e "${CYAN}[*] Mendownload Plugin ZSH...${NC}"
+# --- BAGIAN 4: PLUGINS ---
+echo -e "${C_LABEL}[*] Download Plugins...${NC}"
 git clone https://github.com/zsh-users/zsh-autosuggestions "$INSTALL_DIR/plugins/zsh-autosuggestions" --depth 1
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$INSTALL_DIR/plugins/zsh-syntax-highlighting" --depth 1
 git clone https://github.com/zsh-users/zsh-completions "$INSTALL_DIR/plugins/zsh-completions" --depth 1
 git clone https://github.com/zsh-users/zsh-history-substring-search "$INSTALL_DIR/plugins/zsh-history-substring-search" --depth 1
 
-# --- 5. BUAT BANNER VERTIKAL (ASCII ATAS, BOX BAWAH) ---
-echo -e "${CYAN}[*] Meracik Tampilan Banner...${NC}"
+# --- BAGIAN 5: BANNER STELLAR (CENTERED LOGIC) ---
+echo -e "${C_LABEL}[*] Membuat Banner Stellar Center...${NC}"
 cat > "$INSTALL_DIR/banner.sh" <<'EOF'
 #!/bin/bash
-# Warna
-P1='\e[38;5;93m'   # Deep Purple
-P2='\e[38;5;129m'  # Vivid Purple
-P3='\e[38;5;141m'  # Light Purple
-P4='\e[38;5;213m'  # Pink Accent
-WT='\e[38;5;255m'  # White
-RS='\e[0m'
 
-# Info Gather
+# --- WARNA ---
+C_BORDER='\033[38;5;93m'
+C_TITLE='\033[38;5;213m'
+C_LBL='\033[38;5;141m'
+C_VAL='\033[38;5;255m'
+C_BAR='\033[38;5;129m'
+C_OFF='\033[38;5;236m'
+RS='\033[0m'
+
+# --- FUNGSI TENGAH (CENTER) ---
+print_center() {
+    local text="$1"
+    local cols=$(tput cols)
+    local len=${#text}
+    # Hapus kode warna untuk hitung panjang asli
+    local clean_text=$(echo -e "$text" | sed "s/\x1B\[[0-9;]*[a-zA-Z]//g")
+    local clean_len=${#clean_text}
+    
+    local pad=$(( (cols - clean_len) / 2 ))
+    if [ $pad -lt 0 ]; then pad=0; fi
+    printf "%${pad}s" " "
+    echo -e "$text"
+}
+
+# --- INFO SYSTEM ---
 USER=$(whoami)
 HOST=$(hostname)
+DATE=$(date +%Y-%m-%d)
+TIME=$(date +%H:%M:%S)
+SHELL_NAME=${SHELL##*/}
 KERNEL=$(uname -r | cut -d'-' -f1)
 
-# Deteksi Nama OS yang cantik
 if grep -q "Termux" /data/data/com.termux/files/usr/bin/login 2>/dev/null; then
-    OS="Termux Android"
+    OS="Android Termux"
 elif [ -f /etc/os-release ]; then
     . /etc/os-release
-    OS=$PRETTY_NAME
+    OS=$NAME
 else
     OS=$(uname -o)
 fi
-# Potong nama OS kalau kepanjangan biar muat di box
-OS=$(echo "$OS" | cut -c 1-20)
 
-# Uptime logic
-if [ -f /proc/uptime ]; then
-    UPTIME=$(awk '{print int($1/3600)"h "int(($1%3600)/60)"m"}' /proc/uptime)
+# RAM & DISK BAR CALCULATION
+# (Simple logic for Termux/Linux)
+if [ -f /proc/meminfo ]; then
+    MEM_TOTAL=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    MEM_FREE=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+    if [ -z "$MEM_FREE" ]; then MEM_FREE=$(grep MemFree /proc/meminfo | awk '{print $2}'); fi
+    MEM_USED=$((MEM_TOTAL - MEM_FREE))
+    MEM_PERC=$(( (MEM_USED * 100) / MEM_TOTAL ))
+    
+    # Convert to GB/MB
+    MEM_TXT_USED=$(echo "scale=2; $MEM_USED/1024/1024" | bc)
+    MEM_TXT_TOTAL=$(echo "scale=2; $MEM_TOTAL/1024/1024" | bc)
 else
-    UPTIME="Unknown"
+    MEM_PERC=50
+    MEM_TXT_USED="?"
+    MEM_TXT_TOTAL="?"
 fi
 
+# DISK
+DISK_USED=$(df -h / | awk 'NR==2 {print $3}')
+DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}')
+DISK_PERC=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+
+# Draw Bar Function
+draw_bar() {
+    local perc=$1
+    local width=15
+    local filled=$(( (perc * width) / 100 ))
+    local empty=$(( width - filled ))
+    
+    printf "${C_BAR}"
+    for ((i=0; i<filled; i++)); do printf "█"; done
+    printf "${C_OFF}"
+    for ((i=0; i<empty; i++)); do printf "▒"; done
+    printf "${RS}"
+}
+
+RAM_BAR=$(draw_bar $MEM_PERC)
+DISK_BAR=$(draw_bar $DISK_PERC)
+
+# --- ART & BOX ---
 clear
 echo ""
-# 1. ASCII ART (CENTERED FEEL)
-echo -e "${P1}      .   ${P2},MMM8&&&. ${P1}   * "
-echo -e "${P1}     * ${P2}MMMM88&&&&&    .  "
-echo -e "${P1}        ${P2}MMMM88&&&&&&&      "
-echo -e "${P1}    .   ${P2}MMM88&&&&&&&&      "
-echo -e "${P1}        ${P2}'MMM88&&&&&&'      "
-echo -e "${P1}          ${P2}'MMM8&&&'      * "
-echo -e "${P2}      |\___/|${P4}   N E B U L A - X  "
-echo -e "${P2}      )     (${P3}   U n i v e r s e  "
-echo -e "${P2}     =\     /=${RS}                  "
-echo -e "${P2}       ) . ( ${RS}                  "
-echo -e "${P2}      /     \ ${RS}                 "
 
-# 2. THE BOX (BELOW ASCII)
-# Lebar box disesuaikan agar rapi
-echo -e "${P1} ╭──────────────────────────────╮"
-echo -e "${P1} │ ${P3}User   ${P2}: ${WT}$(printf '%-18s' "$USER") ${P1}│"
-echo -e "${P1} │ ${P3}Host   ${P2}: ${WT}$(printf '%-18s' "$HOST") ${P1}│"
-echo -e "${P1} │ ${P3}OS     ${P2}: ${WT}$(printf '%-18s' "$OS") ${P1}│"
-echo -e "${P1} │ ${P3}Kernel ${P2}: ${WT}$(printf '%-18s' "$KERNEL") ${P1}│"
-echo -e "${P1} │ ${P3}Uptime ${P2}: ${WT}$(printf '%-18s' "$UPTIME") ${P1}│"
-echo -e "${P1} ╰──────────────────────────────╯${RS}"
+# 1. PLANET ASCII (CENTERED)
+# Planet ini mirip Saturnus
+print_center "${C_BORDER}         ,MMM8&&&.            "
+print_center "${C_BORDER}    _MMMMMMM888888&.          "
+print_center "${C_BORDER}  MMMMMM88888888888&          "
+print_center "${C_BORDER}  MMMMMM888888888888          "
+print_center "${C_BORDER}   \`MMMM88888888888'          "
+print_center "${C_BORDER}       \`YMM8888888'           "
+print_center "${C_BORDER}         \`\"\"\"\"\"\"'             "
+echo ""
+
+# 2. BOX INFO (CENTERED BLOCK)
+# Kita bangun boxnya dulu dalam variabel, lalu print_center per baris
+# Format Box 
+
+L="${C_BORDER}│${RS}" # Garis kiri kanan
+# Lebar konten sekitar 50 char
+
+# Top Border dengan Judul "Sistema"
+line1="${C_BORDER}╭──────────── ${C_TITLE}System${C_BORDER} ────────────╮${RS}"
+print_center "$line1"
+
+# Isi Box
+# Baris 1: User & Time
+str=$(printf "${L} ${C_LBL}Usually ${C_VAL}%-10s   ${C_LBL}Time ${C_VAL}%-8s ${L}" "$USER" "$TIME")
+print_center "$str"
+
+# Baris 2: Date & Shell
+str=$(printf "${L} ${C_LBL}Date   ${C_VAL}%-10s   ${C_LBL}Shell ${C_VAL}%-7s  ${L}" "$DATE" "$SHELL_NAME")
+print_center "$str"
+
+# Baris 3: System & Kernel
+str=$(printf "${L} ${C_LBL}OS      ${C_VAL}%-10s   ${C_LBL}Kern  ${C_VAL}%-7s  ${L}" "${OS:0:10}" "${KERNEL:0:7}")
+print_center "$str"
+
+# Divider Tipis
+print_center "${C_BORDER}├─────────────────────────────────┤${RS}"
+
+# Baris RAM
+str=$(printf "${L} ${C_LBL}RAM   ${RS}%s ${C_VAL}%3s%%           ${L}" "$RAM_BAR" "$MEM_PERC")
+print_center "$str"
+str=$(printf "${L}       ${C_OFF}${MEM_TXT_USED}GB / ${MEM_TXT_TOTAL}GB${RS}                ${L}")
+print_center "$str"
+
+# Baris DISK
+str=$(printf "${L} ${C_LBL}Disk  ${RS}%s ${C_VAL}%3s%%           ${L}" "$DISK_BAR" "$DISK_PERC")
+print_center "$str"
+str=$(printf "${L}       ${C_OFF}${DISK_USED} / ${DISK_TOTAL}${RS}                     ${L}")
+print_center "$str"
+
+# Bottom Border (IP De ToR style footer)
+line_end="${C_BORDER}╰────── ${C_LBL}[!] ${C_VAL}Nebula${C_TITLE}X ${C_LBL}Protected ${C_BORDER}─────╯${RS}"
+print_center "$line_end"
 echo ""
 EOF
 chmod +x "$INSTALL_DIR/banner.sh"
 
-# --- 6. SECURITY GUARD BOT (Compatible with Info above) ---
+# --- BAGIAN 6: SECURITY BOT ---
 cat > "$INSTALL_DIR/bin/guard.sh" <<'EOF'
 #!/bin/bash
-RED='\e[31m'
-GREEN='\e[32m'
-YELLOW='\e[33m'
-CYAN='\e[36m'
-NC='\e[0m'
-echo -e "${CYAN}[*] NEBULA GUARD: SCANNING...${NC}"
-echo "---------------------------------"
-# 1. Cek Port
-PORTS=$(netstat -tulpn 2>/dev/null | grep -E ":4444|:5555|:1337")
-if [ ! -z "$PORTS" ]; then echo -e "${RED}[!] PORT BERBAHAYA:${NC}\n$PORTS"; else echo -e "${GREEN}[OK] Port aman.${NC}"; fi
-# 2. Cek File Hidden Script
-HIDDEN=$(find . -maxdepth 2 -name ".*.sh" 2>/dev/null)
-if [ ! -z "$HIDDEN" ]; then echo -e "${RED}[!] HIDDEN SCRIPT:${NC}\n$HIDDEN"; else echo -e "${GREEN}[OK] File aman.${NC}"; fi
-# 3. Cek Malware Signature
-grep -rE "rm -rf /|nc -e|bash -i" . --include=*.sh --exclude-dir=.* 2>/dev/null > sr.txt
-if [ -s sr.txt ]; then echo -e "${RED}[!] MALWARE DETECTED:${NC}"; cat sr.txt; else echo -e "${GREEN}[OK] Signature bersih.${NC}"; fi
-rm sr.txt
-echo "---------------------------------"
+# (Bot Security Standar NebulaX)
+echo "Scanning..."
+netstat -tulpn 2>/dev/null | grep -E ":4444|:5555" && echo "PORT BAHAYA DETECTED!"
+find . -maxdepth 2 -name ".*.sh" && echo "HIDDEN SCRIPT DETECTED!"
 EOF
 chmod +x "$INSTALL_DIR/bin/guard.sh"
 
-# --- 7. TEMA & CONFIG (Adjusted for OS) ---
+# --- BAGIAN 7: THEMA & ZSHRC ---
 cat > "$INSTALL_DIR/nebulaX.zsh-theme" <<EOF
-P_DARK='%F{093}'
-P_MID='%F{129}'
-P_LIGHT='%F{213}'
-P_CYAN='%F{051}'
+P_1='%F{093}'
+P_2='%F{129}'
+P_3='%F{213}'
 RESET='%f'
 setopt prompt_subst
 function git_stat() {
   ref=\$(git symbolic-ref HEAD 2> /dev/null) || return
-  echo "\${P_LIGHT}(\${ref#refs/heads/})\${RESET}"
+  echo "\${P_3}(\${ref#refs/heads/})\${RESET}"
 }
-PROMPT="\${P_DARK}╭─\${P_MID}[\${P_CYAN}%~\${P_MID}] \$(git_stat)
-\${P_DARK}╰─\${P_LIGHT}🚀 \${RESET}"
-RPROMPT="\${P_DARK}%t\${RESET}"
+# Prompt Simpel Elegan
+PROMPT="\${P_1}┌──\${P_2}[\${P_3}%~\${P_2}] \$(git_stat)
+\${P_1}└─\${P_3}😈 \${RESET}"
 EOF
 
-# Backup .zshrc
-if [ -f "$HOME/.zshrc" ]; then cp "$HOME/.zshrc" "$HOME/.zshrc.backup_nebulaX"; fi
-
-# Generate .zshrc
 cat > "$HOME/.zshrc" <<EOF
-# --- NEBULA-X UNIVERSAL CONFIG ---
+# --- NEBULA-X CONFIG ---
 bash $INSTALL_DIR/banner.sh
 
-# Core
 HISTFILE=\$HOME/.zsh_history
-HISTSIZE=50000
-SAVEHIST=50000
+HISTSIZE=10000
+SAVEHIST=10000
 setopt SHARE_HISTORY
-setopt HIST_IGNORE_DUPS
+
 export PATH=\$PATH:$INSTALL_DIR/bin
 
-# Plugins
 source $INSTALL_DIR/nebulaX.zsh-theme
 fpath=($INSTALL_DIR/plugins/zsh-completions/src \$fpath)
 source $INSTALL_DIR/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source $INSTALL_DIR/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source $INSTALL_DIR/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 
-# Keybinds
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 zstyle ':completion:*' menu select
 zstyle ':completion:*' list-colors "\${(s.:.)LS_COLORS}"
 
-# --- SMART ALIASES ---
 alias c='clear'
-alias q='exit'
 alias scan='bash $INSTALL_DIR/bin/guard.sh'
-alias ll='ls -l'
-
-# Detect Package Manager for 'install' alias
-if [ -f /data/data/com.termux/files/usr/bin/bash ]; then
-    alias install='pkg install'
-    alias update='pkg update && pkg upgrade'
-elif [ -f /etc/arch-release ]; then
-    alias install='sudo pacman -S'
-    alias update='sudo pacman -Syu'
-elif [ -f /etc/debian_version ]; then
-    alias install='sudo apt install'
-    alias update='sudo apt update && sudo apt upgrade'
-fi
-
-# Helpers
-x() {
-    if [ -f \$1 ] ; then
-        case \$1 in
-            *.tar.bz2)   tar xjf \$1     ;;
-            *.tar.gz)    tar xzf \$1     ;;
-            *.zip)       unzip \$1       ;;
-            *)           echo "Unknown" ;;
-        esac
-    else echo "Missing file"; fi
-}
-mkcd() { mkdir -p "\$1" && cd "\$1"; }
-calc() { echo "\$*" | bc -l; }
+alias install='$PKG_MAN'
 EOF
 
-# --- 8. FINISHING ---
+# --- BAGIAN 8: FINALISASI ---
 chsh -s zsh
-echo -e "${GREEN}"
-echo "========================================"
-echo "    NEBULA-X v5 BERHASIL DIINSTALL!     "
-echo "    Layout: Vertical (Art -> Box)       "
-echo "    OS Detected: $OS_TYPE               "
-echo "    Ketik 'zsh' untuk mulai.            "
-echo "========================================"
-echo -e "${NC}"
+echo -e "${C_TITLE}INSTALASI SELESAI.${NC}"
+echo -e "${C_LABEL}Silakan ketik 'zsh' atau restart terminal.${NC}"
